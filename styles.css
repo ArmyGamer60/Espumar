@@ -188,11 +188,15 @@ ul { list-style: none; }
   font-size: .78rem; font-weight: 700; border-radius: 999px; letter-spacing: .3px;
 }
 .hero h1 { font-size: clamp(1.9rem, 8vw, 3.2rem); line-height: 1.12; letter-spacing: -.02em; margin-bottom: .9rem; }
+/* Énfasis tipo marcador: franja turquesa detrás de la mitad inferior del texto */
 .hl {
   color: var(--primary);
-  text-decoration: underline wavy var(--aqua);
-  text-decoration-thickness: .08em; text-underline-offset: .18em; text-decoration-skip-ink: none;
+  padding: 0 .1em; margin: 0 -.05em;
+  background: linear-gradient(transparent 58%, rgba(124,196,228,.42) 58%, rgba(124,196,228,.42) 94%, transparent 94%) no-repeat 0 0 / 100% 100%;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  animation: hlIn .9s .35s var(--ease) both;
 }
+@keyframes hlIn { from { background-size: 0% 100%; } }
 
 /* Sello giratorio */
 .seal {
