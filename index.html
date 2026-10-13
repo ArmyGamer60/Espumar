@@ -12,13 +12,15 @@
   <link rel="stylesheet" href="styles.css">
 
   <!-- Vista previa al compartir el enlace (WhatsApp, Facebook, Instagram, X).
-       Al publicar el sitio, cambia las rutas por la URL completa: https://tudominio.mx/img/og-espumar.jpg -->
+       Las rutas deben ser absolutas: si cambia el dominio, actualiza estas URLs. -->
+  <link rel="canonical" href="https://espumar.vercel.app/">
+  <meta property="og:url" content="https://espumar.vercel.app/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_MX">
   <meta property="og:site_name" content="Espumar">
   <meta property="og:title" content="Espumar | La pureza y el cuidado que tu espacio merece">
   <meta property="og:description" content="Fórmulas concentradas para auto, hogar, ropa y cuidado personal. Arma tu lista y cotiza por WhatsApp, sin registros.">
-  <meta property="og:image" content="img/og-espumar.jpg">
+  <meta property="og:image" content="https://espumar.vercel.app/img/og-espumar.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Productos Espumar de las líneas hogar, ropa, automotriz y personal">
@@ -32,7 +34,8 @@
     "name": "Espumar",
     "slogan": "La pureza y el cuidado que tu espacio merece",
     "description": "Productos de limpieza concentrados: cuidado automotriz, del hogar, de la ropa y personal.",
-    "logo": "img/logo-espumar.webp",
+    "url": "https://espumar.vercel.app/",
+    "logo": "https://espumar.vercel.app/img/logo-espumar.webp",
     "sameAs": ["https://www.instagram.com/espumar.mx"],
     "contactPoint": {
       "@type": "ContactPoint",

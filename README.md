@@ -4,6 +4,8 @@ Sitio de una sola página para **Espumar**, marca de productos de limpieza con c
 
 Proyecto final de **Diseño Web Interactivo · UTEL**.
 
+**Sitio en línea:** https://espumar.vercel.app (cada `git push` a `main` vuelve a desplegarlo en Vercel).
+
 ## Funciones
 - Diseño **mobile-first** (celular → tablet → escritorio), sin frameworks ni librerías.
 - Catálogo de 16 productos con filtros, carrusel y hojas de producto: presentación, aroma y cantidad.

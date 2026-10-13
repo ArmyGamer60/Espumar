@@ -77,8 +77,8 @@ Todas las animaciones se desactivan si el usuario tiene activada la opción del 
    - Enlaces al aviso en el footer y en las preguntas frecuentes.
 
    **Falta completar los datos resaltados en amarillo:** responsable, domicilio, correo y plazo de conservación.
-2. **Dominio y rutas absolutas.** Al publicar, cambiar `og:image` y el `logo` del JSON-LD por la URL completa (`https://dominio/img/...`). Si no, WhatsApp no mostrará la imagen de vista previa.
-3. **Hosting con HTTPS y compresión.** Netlify, Vercel y GitHub Pages ya incluyen gzip/brotli y caché; ahí se obtiene el ~26 KB de código medido arriba.
+2. ~~**Dominio y rutas absolutas.**~~ ✅ **Hecho.** `og:image`, `og:url`, `canonical` y el `logo` del JSON-LD apuntan a https://espumar.vercel.app.
+3. ~~**Hosting con HTTPS y compresión.**~~ ✅ **Hecho.** El sitio está publicado en Vercel con HTTPS y compresión. Las imágenes tienen caché de 7 días (`vercel.json`), y cada `git push` a `main` vuelve a desplegar el sitio automáticamente.
 4. **Lighthouse en producción.** Volver a medir con PageSpeed Insights una vez publicado, simulando una conexión 4G. Las cifras de arriba son con servidor local.
 5. **Pruebas con usuarios reales.** Pedir a 3 a 5 personas del público objetivo que hagan un pedido desde su celular. Medir cuánto tardan y dónde dudan.
 6. **Fotos por producto.** Hoy cada producto usa el icono de su línea. Si se toman fotos individuales, convertirlas a WebP de ~400 px (unos 20 KB cada una).
