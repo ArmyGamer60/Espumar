@@ -68,7 +68,43 @@ Todo se hizo con CSS, SVG en línea o archivos que ya se cargaban. **No hay imá
 
 Todas las animaciones se desactivan si el usuario tiene activada la opción del sistema **"Reducir movimiento"**.
 
-## 4. Pendientes recomendados (antes de publicar)
+## 4. Segunda auditoría: web + panel de administración (14/10/2026)
+
+**Cómo se probó:**
+- Lighthouse en modo celular sobre producción (https://espumar.vercel.app).
+- 59 pruebas automáticas de la API contra el almacenamiento real, en el entorno aislado `dev/`.
+- Recorrido de cada sección del panel en 375, 768 y 1366 px.
+- Recorrido de compra completo: la web envía el pedido y aparece en el panel.
+
+### Lighthouse en producción (celular)
+| Página | Rendimiento | Accesibilidad | Buenas prácticas | SEO |
+|---|---|---|---|---|
+| Inicio | 97 → **100** | 97 → **100** | 100 | 100 |
+| Aviso de privacidad | 100 | 100 | 100 | 63 → **100** |
+| Panel `/admin` | 100 | 100 | 96 → **100** | 54 → 63* |
+
+\* El panel está marcado a propósito como "no indexar", para que no aparezca en Google.
+
+### Errores encontrados y corregidos
+| Severidad | Hallazgo | Corrección |
+|---|---|---|
+| Alta | Guardar el catálogo o la información por segunda vez siempre daba "otra persona modificó estos datos". El almacenamiento devuelve la versión en forma "débil" (`W/"…"`) al leer y espera la forma fuerte al escribir. | La versión se normaliza al leer. Se agregaron pruebas de "leer y luego guardar". |
+| Alta (seguridad) | La sesión de un usuario eliminado seguía sirviendo si se creaba otro usuario con el mismo nombre. | La sesión se ata a la fecha de creación del usuario. Hay una prueba de regresión. |
+| Media | En la web, los productos sin aromas mostraban la etiqueta "Aroma" vacía. | Solo se muestra si hay aromas. |
+| Baja | Los eventos de una sección del panel seguían activos en la siguiente. | Se limpian al cambiar de sección. |
+| Baja | Al entrar al panel sin sesión aparecía un error 401 en consola. | `/api/auth/me` responde 200 con `user: null`. |
+
+### Ajustes de diseño
+- **Pedidos:** el nombre y el estado van arriba, y el folio ya no se corta.
+- **Catálogo en celular:** los controles pasan a una barra inferior, así los nombres de producto se leen completos.
+- **Botones de las hojas:** ya no saltan de línea.
+- **Aviso de guardado:** flota sobre la barra inferior en lugar de taparla.
+- **Miniaturas de imagen:** son cuadradas.
+- **Lista de roles:** quedó alineada.
+- **Puntos del carrusel:** tienen un área táctil de 32×28 px, lo que exige Lighthouse.
+- **Usuarios nuevos:** se crean con el rol Ventas por defecto, el de menos permisos.
+
+## 5. Pendientes recomendados (antes de publicar)
 1. ~~**Aviso de privacidad.**~~ ✅ **Hecho.** Se agregaron:
    - El aviso integral en `aviso-privacidad.html`, conforme a la nueva LFPDPPP (DOF 20/03/2025).
    - El aviso simplificado junto al botón "Enviar por WhatsApp".
