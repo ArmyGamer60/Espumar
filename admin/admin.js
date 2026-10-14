@@ -127,8 +127,13 @@ sheet.addEventListener('click', e => {
 async function boot() {
   try {
     const me = await api('auth/me');
-    S.user = me.user;
     S.roles = me.roles;
+    if (!me.user) {
+      const st = await api('auth/status').catch(() => ({ hasUsers: true }));
+      showAuth(st);
+      return;
+    }
+    S.user = me.user;
     showApp();
   } catch (err) {
     if (err.status === 401 || err.status === 403) {
@@ -218,6 +223,7 @@ async function route() {
   $$('#nav a').forEach(a => a.toggleAttribute('aria-current', a.dataset.nav === id));
   $$('#nav a').forEach(a => { if (a.dataset.nav === id) a.setAttribute('aria-current', 'page'); });
   const view = $('#view');
+  view.onclick = view.onchange = view.oninput = null;   // los eventos de la sección anterior no se arrastran
   view.innerHTML = '<p class="loading">Cargando…</p>';
   try {
     await VIEWS[id].load?.();
@@ -291,14 +297,14 @@ VIEWS.resumen = {
 
 function orderRow(o) {
   const items = o.items.slice(0, 2).map(i => `${i.cantidad} × ${i.producto}`).join(', ') + (o.items.length > 2 ? '…' : '');
-  return `<button class="row" type="button" data-folio="${esc(o.folio)}">
+  return `<button class="row order-row" type="button" data-folio="${esc(o.folio)}">
     <span class="avatar" aria-hidden="true">${esc((o.nombre || '?').charAt(0).toUpperCase())}</span>
     <span class="row-main">
-      <span class="row-title">${esc(o.nombre || 'Sin nombre')} <span class="muted small">· ${esc(o.folio)}</span></span>
+      <span class="row-top"><span class="row-title">${esc(o.nombre || 'Sin nombre')}</span>${statusBadge(o.estado)}</span>
+      <span class="row-sub"><span class="folio">${esc(o.folio)}</span> · ${fmtShort(o.fecha)}</span>
       <span class="row-sub">${esc(items)}</span>
-      <span class="row-sub">${fmtShort(o.fecha)} · ${pieces(o)} pzas${o.tipo ? ' · ' + esc(o.tipo) : ''}</span>
+      <span class="row-sub">${pieces(o)} pzas${o.tipo ? ' · ' + esc(o.tipo) : ''}</span>
     </span>
-    <span class="row-side">${statusBadge(o.estado)}</span>
   </button>`;
 }
 
@@ -364,7 +370,7 @@ function openOrder(folio) {
       </section>
     </form>`;
   const foot = `${can(['admin']) ? '<button class="btn btn-outline btn-danger" type="button" data-action="delete">Eliminar</button>' : ''}
-    <button class="btn btn-outline" type="button" data-action="copy">Copiar folio</button>
+    <button class="btn btn-outline" type="button" data-action="copy" aria-label="Copiar folio">Copiar</button>
     <button class="btn btn-primary" type="button" data-action="save">Guardar</button>`;
   const d = openSheet({ title: o.folio, badge: o.estado, body, foot });
   d.onclick = async e => {
@@ -459,18 +465,19 @@ VIEWS.catalogo = {
       <div class="rows" style="margin-top:.9rem">${list.map(p => {
         const same = products.filter(x => x.line === p.line);
         const pos = same.indexOf(p);
-        return `<div class="row ${p.active ? '' : 'is-off'}" data-line="${p.line}">
+        return `<div class="row prod-row ${p.active ? '' : 'is-off'}" data-line="${p.line}">
           ${p.img ? `<img class="thumb" src="${esc(imgSrc(p.img))}" alt="" loading="lazy">` : `<span class="thumb">${ico('i-' + p.line)}</span>`}
           <span class="row-main">
             <span class="row-title">${esc(p.name)}</span>
             <span class="row-sub">${esc(lines[p.line].badge)} · ${esc(p.sizes.join(', '))}</span>
-            <span class="row-sub">${p.active ? 'Visible en la web' : 'Oculto en la web'}</span>
           </span>
           <span class="row-side">
-            <label class="switch" title="${p.active ? 'Ocultar de la web' : 'Mostrar en la web'}"><input type="checkbox" data-toggle="${esc(p.id)}" ${p.active ? 'checked' : ''} aria-label="Visible en la web: ${esc(p.name)}"><span></span></label>
+            <label class="switch" title="${p.active ? 'Ocultar de la web' : 'Mostrar en la web'}"><input type="checkbox" data-toggle="${esc(p.id)}" ${p.active ? 'checked' : ''} aria-label="Visible en la web: ${esc(p.name)}"><span></span><em class="switch-text">${p.active ? 'Visible' : 'Oculto'}</em></label>
+            <span class="row-tools">
             <button class="mini-btn" type="button" data-move="${esc(p.id)}" data-dir="-1" aria-label="Subir ${esc(p.name)}" ${pos === 0 ? 'disabled' : ''}>${ico('i-up')}</button>
             <button class="mini-btn" type="button" data-move="${esc(p.id)}" data-dir="1" aria-label="Bajar ${esc(p.name)}" ${pos === same.length - 1 ? 'disabled' : ''}>${ico('i-down')}</button>
             <button class="mini-btn" type="button" data-edit="${esc(p.id)}" aria-label="Editar ${esc(p.name)}">${ico('i-edit')}</button>
+            </span>
           </span>
         </div>`;
       }).join('') || '<div class="empty">No hay productos en esta línea.</div>'}</div>
@@ -665,7 +672,7 @@ VIEWS.usuarios = {
         </button>`).join('')}</div>
       <section class="panel" style="margin-top:1rem">
         <h2>Qué puede hacer cada rol</h2>
-        <ul class="item-list">
+        <ul class="item-list roles-list">
           <li><span><b>Administrador</b></span><span class="muted small">Todo, incluida la gestión de usuarios</span></li>
           <li><span><b>Editor</b></span><span class="muted small">Pedidos, catálogo e información del sitio</span></li>
           <li><span><b>Ventas</b></span><span class="muted small">Solo pedidos</span></li>
@@ -682,7 +689,8 @@ VIEWS.usuarios = {
 function userSheet(u) {
   const isNew = !u;
   const isSelf = u?.usuario === S.user.usuario;
-  const roleOpts = Object.entries(S.roles).map(([k, v]) => `<option value="${k}" ${u?.rol === k ? 'selected' : ''}>${esc(v)}</option>`).join('');
+  // Un usuario nuevo empieza con el rol de menos permisos (Ventas)
+  const roleOpts = Object.entries(S.roles).map(([k, v]) => `<option value="${k}" ${(u?.rol || 'ventas') === k ? 'selected' : ''}>${esc(v)}</option>`).join('');
   const body = `<form id="userForm" class="form-grid" novalidate>
       ${isNew ? `<label class="field"><span>Usuario</span><input type="text" name="usuario" required maxlength="30" autocapitalize="none" autocomplete="off"><small class="hint">Con este nombre inicia sesión. 3 a 30 caracteres.</small></label>` : ''}
       <label class="field"><span>Nombre</span><input type="text" name="nombre" value="${esc(u?.nombre)}" maxlength="60"></label>

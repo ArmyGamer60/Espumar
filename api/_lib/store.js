@@ -21,7 +21,9 @@ export async function readJSON(p) {
   }
   if (!r || r.statusCode !== 200) return null;
   const text = await new Response(r.stream).text();
-  return { data: JSON.parse(text), etag: r.blob.etag };
+  // Los archivos grandes llegan comprimidos y su ETag viene "débil" (W/"…");
+  // la escritura condicional espera la forma fuerte ("…"), así que se normaliza.
+  return { data: JSON.parse(text), etag: String(r.blob.etag || '').replace(/^W\//, '') };
 }
 
 // etag → solo escribe si nadie cambió el archivo (control de concurrencia)

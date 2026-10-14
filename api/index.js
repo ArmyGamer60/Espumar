@@ -127,9 +127,15 @@ const ROUTES = {
 
   'POST auth/logout': async req => json({ ok: true }, 200, { 'Set-Cookie': sessionCookie(req, '', 0) }),
 
+  // Sin sesión responde 200 con user: null (así el panel no registra un error en consola)
   'GET auth/me': async req => {
-    const user = await requireUser(req, STAFF);
-    return json({ user: publicUser(user), roles: ROLES });
+    try {
+      const user = await requireUser(req, STAFF);
+      return json({ user: publicUser(user), roles: ROLES });
+    } catch (err) {
+      if (err.status === 401) return json({ user: null, roles: ROLES });
+      throw err;
+    }
   },
 
   'POST auth/password': async req => {

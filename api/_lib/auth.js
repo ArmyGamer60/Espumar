@@ -49,7 +49,9 @@ export function safeEqual(a, b) {
 }
 
 export function signSession(user) {
-  const payload = { u: user.usuario, v: user.sv || 0, exp: Date.now() + SESSION_HOURS * 3600_000 };
+  // c = fecha de creación: si el usuario se borra y se vuelve a crear con el mismo
+  // nombre, las sesiones viejas dejan de servir
+  const payload = { u: user.usuario, v: user.sv || 0, c: user.creado, exp: Date.now() + SESSION_HOURS * 3600_000 };
   const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
   const sig = createHmac('sha256', secret()).update(body).digest('base64url');
   return `${body}.${sig}`;
@@ -81,7 +83,7 @@ export async function requireUser(request, roles) {
   if (!p) throw new HttpError(401, 'Inicia sesión para continuar.');
   const rec = await readJSON(`users/${p.u}.json`);
   const user = rec?.data;
-  if (!user || !user.activo || (user.sv || 0) !== p.v) throw new HttpError(401, 'Tu sesión ya no es válida. Inicia sesión de nuevo.');
+  if (!user || !user.activo || (user.sv || 0) !== p.v || user.creado !== p.c) throw new HttpError(401, 'Tu sesión ya no es válida. Inicia sesión de nuevo.');
   if (roles && !roles.includes(user.rol)) throw new HttpError(403, 'Tu rol no tiene permiso para esta sección.');
   return user;
 }

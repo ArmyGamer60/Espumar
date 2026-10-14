@@ -350,7 +350,7 @@ function productHTML(p, { showLine = false, delay = 0 } = {}) {
       <p class="opt-label">Presentación</p>
       <div class="opts" role="radiogroup" aria-label="Presentación de ${esc(p.name)}">${radios('size', p.sizes)}</div>
     </div>
-    ${p.scents ? `
+    ${p.scents?.length ? `
     <div>
       <p class="opt-label">Aroma</p>
       <div class="opts" role="radiogroup" aria-label="Aroma de ${esc(p.name)}">${radios('scent', p.scents)}</div>

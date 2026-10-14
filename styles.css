@@ -269,12 +269,11 @@ ul { list-style: none; }
   padding: .45rem .9rem; border-radius: 999px;
   background: rgba(255,255,255,.92); color: var(--primary); font-weight: 700; font-size: .9rem;
 }
-.dots { display: flex; justify-content: center; gap: .5rem; margin-top: .9rem; }
-.dot { width: 8px; height: 8px; border-radius: 999px; background: var(--border); transition: width .3s var(--ease), background .3s; padding: 0; }
-.dot[aria-current="true"] { width: 24px; background: var(--primary); }
-/* área táctil ampliada sin agrandar el punto */
-.dot { position: relative; }
-.dot::after { content: ""; position: absolute; inset: -10px -4px; }
+.dots { display: flex; justify-content: center; gap: 0; margin-top: .5rem; }
+/* El botón mide 32×28 (área táctil cómoda); el punto visible es su ::before */
+.dot { min-width: 32px; height: 28px; padding: 0; display: grid; place-items: center; background: none; border-radius: 999px; }
+.dot::before { content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--border); transition: width .3s var(--ease), background .3s; }
+.dot[aria-current="true"]::before { width: 24px; background: var(--primary); }
 
 /* ---------- Secciones ---------- */
 .section { padding: 3rem 0; }
