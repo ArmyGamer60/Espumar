@@ -1,0 +1,10 @@
+{
+  "name": "espumar",
+  "private": true,
+  "type": "module",
+  "description": "Sitio y panel de administración de Espumar",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@vercel/blob": "^2.8.2"
+  }
+}

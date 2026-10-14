@@ -6,7 +6,7 @@
    ========================================================= */
 document.documentElement.classList.add('js');
 
-const WA_NUMBER = '527441709130';
+let WA_NUMBER = '527441709130';   // se actualiza desde el panel (Información del sitio)
 const STORAGE_KEY = 'espumar-cotizacion';
 
 // URL de la App web de Google Apps Script que registra los pedidos en Google Sheets
@@ -78,13 +78,89 @@ document.addEventListener('DOMContentLoaded', () => {
   initStats();
   Cart.load();
   Cart.render();
+  paintCounts();
+  loadRemote();
+});
 
-  // Cuántos productos tiene cada línea
+// Cuántos productos tiene cada línea
+function paintCounts() {
   $$('[data-count]').forEach(el => {
     const n = PRODUCTS.filter(p => p.line === el.dataset.count).length;
-    el.textContent = `${n} productos`;
+    el.textContent = `${n} producto${n === 1 ? '' : 's'}`;
   });
-});
+}
+
+/* ---------- Datos del panel de administración ---------- */
+// La página se muestra al instante con los datos incluidos; después trae el
+// catálogo y la información actualizados desde /api/catalog (en caché del CDN).
+async function loadRemote() {
+  if (!location.protocol.startsWith('http')) return;
+  try {
+    const res = await fetch('/api/catalog');
+    if (!res.ok) return;
+    const { catalog, config } = await res.json();
+    if (catalog?.products?.length) applyCatalog(catalog);
+    if (config) applyConfig(config);
+  } catch { /* sin conexión con la API: se quedan los datos incluidos */ }
+}
+
+const imgUrl = u => (u && u.startsWith('img/') ? u : u || '');
+
+function applyCatalog(catalog) {
+  for (const [key, l] of Object.entries(catalog.lines || {})) {
+    if (!LINES[key]) continue;
+    Object.assign(LINES[key], { name: l.name, badge: l.badge, img: imgUrl(l.img) || LINES[key].img });
+    const card = $(`.card[data-category="${key}"]`);
+    if (card) {
+      $('h3', card).textContent = l.name;
+      if (l.desc) $('.card-body > p', card).textContent = l.desc;
+      const badge = $('.badge', card);
+      if (badge && l.badge) badge.lastChild.textContent = l.badge;
+      const img = $('.card-media img', card);
+      if (img && l.img && img.getAttribute('src') !== imgUrl(l.img)) img.src = imgUrl(l.img);
+    }
+    const slideImg = $(`.slide[data-open-line="${key}"] img`);
+    if (slideImg && l.img && slideImg.getAttribute('src') !== imgUrl(l.img)) slideImg.src = imgUrl(l.img);
+  }
+  PRODUCTS.splice(0, PRODUCTS.length, ...catalog.products.map(p => ({ ...p, img: imgUrl(p.img) })));
+  paintCounts();
+  initStats();
+  // La guía y el carrito se ajustan a los productos vigentes
+  const results = $('#guideResults');
+  const chip = $('.chip[aria-pressed="true"]', $('#spaceChips'));
+  if (chip) chip.click();
+  else if (results) results.innerHTML = '<p class="guide-hint">Elige un espacio para ver la recomendación.</p>';
+  Cart.items = Cart.items.filter(i => byId(i.id));
+  Cart.save();
+  Cart.render();
+}
+
+function applyConfig(c) {
+  if (/^\d{10,15}$/.test(c.whatsapp || '') && c.whatsapp !== WA_NUMBER) {
+    const old = WA_NUMBER;
+    WA_NUMBER = c.whatsapp;
+    $$(`a[href*="wa.me/${old}"]`).forEach(a => { a.href = a.href.replace(`wa.me/${old}`, `wa.me/${WA_NUMBER}`); });
+  }
+  if (c.telefono) {
+    $$('a[href^="tel:"]').forEach(a => {
+      a.href = 'tel:+' + c.telefono.replace(/\D/g, '');
+      a.lastChild.textContent = ' ' + c.telefono;
+    });
+  }
+  if (c.instagram) {
+    $$('a[href*="instagram.com/"]').forEach(a => {
+      a.href = `https://www.instagram.com/${c.instagram}`;
+      if (a.lastChild?.nodeType === 3 && a.lastChild.textContent.includes('@')) a.lastChild.textContent = ' @' + c.instagram;
+    });
+  }
+  if (c.heroPill) $('.hero .pill').textContent = c.heroPill;
+  if (c.heroSubtitle) $('.hero-text > p').textContent = c.heroSubtitle;
+  const bar = $('#announce');
+  if (bar && c.anuncio?.activo && c.anuncio.texto) {
+    $('#announceText').textContent = c.anuncio.texto;
+    bar.hidden = false;
+  }
+}
 
 /* ---------- Header + menú móvil ---------- */
 function initHeader() {
@@ -261,7 +337,9 @@ function productHTML(p, { showLine = false, delay = 0 } = {}) {
   return `
   <article class="product" data-id="${p.id}" data-line="${p.line}" style="animation-delay:${delay * 50}ms">
     <div class="product-top">
-      <span class="product-ico" aria-hidden="true"><svg class="ico"><use href="#i-${p.line}"/></svg></span>
+      ${p.img
+        ? `<img class="product-img" src="${esc(p.img)}" alt="" width="56" height="56" loading="lazy" decoding="async">`
+        : `<span class="product-ico" aria-hidden="true"><svg class="ico"><use href="#i-${p.line}"/></svg></span>`}
       <div>
         ${showLine ? `<span class="line-tag">${esc(LINES[p.line].badge)}</span>` : ''}
         <h3>${esc(p.name)}</h3>
@@ -592,10 +670,19 @@ function newFolio() {
   return `ESP-${ymd}-${[...rnd].map(b => abc[b % abc.length]).join('')}`;
 }
 
-// Envía el pedido a Google Sheets. Apps Script no responde con CORS,
-// así que se manda como text/plain en modo no-cors (sin leer la respuesta).
+// Registra el pedido en el panel de administración (/api/orders) y, si está
+// configurado, también en Google Sheets.
 function logOrder(order) {
+  if (location.protocol.startsWith('http')) {
+    fetch('/api/orders', {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order)
+    }).catch(() => {});
+  }
   if (!SHEETS_URL) return;
+  // Apps Script no responde con CORS: se manda como text/plain en modo no-cors
   const body = JSON.stringify(order);
   try {
     fetch(SHEETS_URL, {

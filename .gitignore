@@ -9,3 +9,6 @@ desktop.ini
 
 .vercel
 .env*
+node_modules/
+
+.env*

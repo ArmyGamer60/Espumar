@@ -368,6 +368,13 @@ ul { list-style: none; }
   background: color-mix(in srgb, var(--line) 12%, #fff); color: var(--line);
 }
 .product-ico .ico { width: 24px; height: 24px; }
+.product-img { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: var(--bg-light); }
+
+/* Barra de anuncio (se activa desde el panel) */
+.announce {
+  background: var(--primary); color: #fff; text-align: center;
+  font-size: .85rem; font-weight: 600; line-height: 1.4; padding: .55rem 1rem;
+}
 .product .line-tag { color: var(--line) !important; }
 .product h3 { font-size: 1rem; line-height: 1.3; }
 .product .use { color: var(--muted); font-size: .88rem; line-height: 1.45; }
